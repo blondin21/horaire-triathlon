@@ -1,0 +1,9 @@
+{
+  "name": "horaires-velo",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Horaires de passage : natation, vélo, course à pied (Vercel + Neon Postgres)",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": { "@neondatabase/serverless": "^1.0.0" }
+}
