@@ -96,8 +96,6 @@ tr.pt{cursor:pointer}tr.pt:hover td{background:var(--bg)}tr.pt.sel td{background
   <button class="ghost" id="delbtn">Supprimer ce parcours</button>
   <span class="grow"></span>
   <span id="who" class="hint" style="margin:0"></span>
-  <button id="usersbtn">Utilisateurs</button>
-  <button id="accbtn">Mon compte</button>
   <button id="loginbtn">Se connecter</button>
   <button class="ghost" id="logoutbtn">Se déconnecter</button>
 </div>
@@ -115,54 +113,16 @@ tr.pt{cursor:pointer}tr.pt:hover td{background:var(--bg)}tr.pt.sel td{background
 </section>
 <section id="connexion" hidden>
   <h2>Connexion</h2>
-  <p class="hint">Sans connexion, tu consultes les restitutions en mode invité. Connecte-toi avec ton email pour modifier les parcours, les groupes, les points de passage et les GPX. Pas encore d’accès ? Demande à l’administrateur de t’en créer un : il t’enverra un lien pour choisir ton mot de passe.</p>
+  <p class="hint">Sans connexion, tu consultes les restitutions en mode invité. Connecte-toi avec ton email pour modifier les parcours, les groupes, les points de passage et les GPX.</p>
+  <div class="seg" id="amode" role="group" aria-label="Mode"><button type="button" data-m="login" aria-pressed="true">Se connecter</button><button type="button" data-m="signup" aria-pressed="false">Créer un compte</button></div>
   <form id="aform" class="card form">
     <label>Email<input id="aemail" type="email" required autocomplete="email"></label>
-    <label>Mot de passe<input id="apw" type="password" required autocomplete="current-password"></label>
+    <label>Mot de passe (8 caractères minimum)<input id="apw" type="password" required minlength="8" autocomplete="current-password"></label>
+    <label id="acode-l" hidden>Code d’invitation<input id="acode" type="password" autocomplete="off"></label>
     <div class="msg" id="amsg" role="alert"></div>
-    <div class="msg" id="acfg" hidden>La connexion n’est pas encore configurée sur ce site (variables SESSION_SECRET, DATABASE_URL, ADMIN_EMAIL et ADMIN_PASSWORD).</div>
-    <div class="bar" style="margin:0"><button class="primary" type="submit">Se connecter</button></div>
+    <div class="msg" id="acfg" hidden>La connexion n’est pas encore configurée sur ce site (variables SESSION_SECRET et INVITE_CODE).</div>
+    <div class="bar" style="margin:0"><button class="primary" id="asubmit" type="submit">Se connecter</button></div>
   </form>
-</section>
-<section id="activer" hidden>
-  <h2>Active ton accès</h2>
-  <p class="hint" id="act-intro">Choisis le mot de passe de ton compte (8 caractères minimum).</p>
-  <form id="actform" class="card form">
-    <div class="big"><span>Email</span><strong id="act-email"></strong></div>
-    <label>Mot de passe<input id="actpw" type="password" required minlength="8" autocomplete="new-password"></label>
-    <label>Confirme le mot de passe<input id="actpw2" type="password" required minlength="8" autocomplete="new-password"></label>
-    <div class="msg" id="actmsg" role="alert"></div>
-    <div class="bar" style="margin:0"><button class="primary" id="actbtn" type="submit">Activer mon accès</button></div>
-  </form>
-</section>
-<section id="compte" hidden>
-  <h2>Mon compte</h2>
-  <p class="hint" id="acc-info"></p>
-  <form id="pwform" class="card form">
-    <label>Mot de passe actuel<input id="pwcur" type="password" required autocomplete="current-password"></label>
-    <label>Nouveau mot de passe (8 caractères minimum)<input id="pwnew" type="password" required minlength="8" autocomplete="new-password"></label>
-    <label>Confirme le nouveau mot de passe<input id="pwnew2" type="password" required minlength="8" autocomplete="new-password"></label>
-    <div class="msg" id="pwmsg" role="alert"></div>
-    <div class="bar" style="margin:0"><button class="primary" type="submit">Changer le mot de passe</button></div>
-  </form>
-</section>
-<section id="utilisateurs" hidden>
-  <h2>Utilisateurs</h2>
-  <p class="hint">Crée un accès avec l’adresse email de la personne. L’application génère un lien d’activation, valable 7 jours, que tu lui envoies : elle choisit elle-même son mot de passe.</p>
-  <form id="uform" class="card form" style="max-width:560px">
-    <label>Email de la personne<input id="uemail" type="email" required autocomplete="off" placeholder="prenom.nom@exemple.fr"></label>
-    <label>Rôle<select id="urole"><option value="editor">Éditeur : modifie les parcours</option><option value="admin">Administrateur : modifie et gère les accès</option></select></label>
-    <div class="bar" style="margin:0"><button class="primary" type="submit">Créer l’accès</button></div>
-  </form>
-  <div class="card panel" id="ulink" hidden style="margin-top:16px;max-width:760px">
-    <strong>Lien d’activation pour <span id="ulink-e"></span></strong>
-    <input id="ulink-i" readonly style="width:100%;margin:10px 0;text-align:left" aria-label="Lien d’activation">
-    <div class="bar" style="margin:0"><button id="ucopy" type="button">Copier le lien</button><a class="btn" id="umail" href="#">Envoyer par email</a></div>
-    <p class="hint" style="margin:10px 0 0">Ce lien n’est affiché qu’une fois. Si tu le perds, génère-en un nouveau.</p>
-  </div>
-  <div class="msg" id="umsg" role="alert"></div>
-  <h3>Accès existants</h3>
-  <div class="card scroll"><table><thead><tr><th>Email</th><th>Rôle</th><th>État</th><th></th></tr></thead><tbody id="ubody"></tbody></table></div>
 </section>
 <section id="vide" hidden>
   <h2>Aucun parcours</h2>
@@ -189,7 +149,7 @@ const SK=["nat","velo","cap"];
 const SP={velo:{n:"Vélo",rn:"Restitution vélo",c:1},nat:{n:"Natation",rn:"Restitution natation",c:2},cap:{n:"Course à pied",rn:"Restitution course",c:0}};
 const TABS=[["nat","Natation"],["nat-r","Restitution natation"],["velo","Vélo"],["velo-r","Restitution vélo"],["cap","Course à pied"],["cap-r","Restitution course"],["global","Restitution globale"]];
 const ALIAS={points:"velo",velos:"velo",gpx:"velo",restitution:"velo-r"};
-let routes=[],cur=null,tab="global",sel={},T={},timer=null,dirty=false,me=null,role=null,authCfg=true;
+let routes=[],cur=null,tab="global",sel={},T={},timer=null,dirty=false,me=null,authMode="login",authCfg=true;
 const S=k=>cur.sports[k];
 /* Allures : vélo en km/h ; natation en secondes/100 m ; course en secondes/km (distances stockées en km) */
 const fpace=s=>{s=Math.round(s);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
@@ -206,7 +166,7 @@ const sortedPts=k=>S(k).points.slice().sort((a,b)=>a.km-b.km);
 async function api(method,path,body){
   const r=await fetch("/api"+path,{method,credentials:"same-origin",headers:{"content-type":"application/json"},body:body?JSON.stringify(body):undefined});
   let j=null;try{j=await r.json()}catch(e){}
-  if(r.status===401&&!path.startsWith("/auth/")){me=null;role=null;updateAuth()}
+  if(r.status===401&&!path.startsWith("/auth/")){me=null;updateAuth()}
   if(!r.ok){const e=new Error(j&&j.error?j.error:String(r.status));e.status=r.status;throw e}
   return j;
 }
@@ -484,72 +444,28 @@ document.addEventListener("click",async e=>{
   }catch(err){status("err","L’export n’a pas pu être créé.")}
 });
 
-/* ---------- Connexion, activation, compte, utilisateurs ---------- */
+/* ---------- Connexion ---------- */
 function updateAuth(){
-  $("#who").textContent=me?"Connecté : "+me+(role==="admin"?" (administrateur)":""):"Mode invité";
+  $("#who").textContent=me?"Connecté : "+me:"Mode invité";
   $("#loginbtn").hidden=!!me;$("#logoutbtn").hidden=!me;$("#newbtn").hidden=!me;
-  $("#accbtn").hidden=!me;$("#usersbtn").hidden=role!=="admin";
 }
-const go=h=>{location.hash=h;if(!h)show()};
-$("#loginbtn").onclick=()=>go("#connexion");
-$("#vlogin").onclick=()=>go("#connexion");
-$("#accbtn").onclick=()=>go("#compte");
-$("#usersbtn").onclick=()=>go("#utilisateurs");
-$("#logoutbtn").onclick=async()=>{try{await api("POST","/auth/logout")}catch(e){}me=null;role=null;dirty=false;updateAuth();history.replaceState(null,"","#");show()};
-const err=e=>e.message&&isNaN(e.message)?e.message:"Une erreur est survenue. Réessaie.";
+function renderAuthForm(){
+  $("#acode-l").hidden=authMode!=="signup";$("#acfg").hidden=authCfg;
+  $$("#amode button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.m===authMode)));
+  $("#asubmit").textContent=authMode==="signup"?"Créer le compte":"Se connecter";
+  $("#apw").autocomplete=authMode==="signup"?"new-password":"current-password";
+}
+$("#loginbtn").onclick=()=>{location.hash="#connexion"};
+$("#vlogin").onclick=()=>{location.hash="#connexion"};
+$("#logoutbtn").onclick=async()=>{try{await api("POST","/auth/logout")}catch(e){}me=null;dirty=false;updateAuth();history.replaceState(null,"","#");show()};
+$("#amode").addEventListener("click",e=>{const b=e.target.closest("button");if(b){authMode=b.dataset.m;$("#amsg").textContent="";renderAuthForm()}});
 $("#aform").addEventListener("submit",async e=>{
   e.preventDefault();const m=$("#amsg");m.textContent="";
   try{
-    const r=await api("POST","/auth/login",{email:$("#aemail").value.trim(),password:$("#apw").value});
-    me=r.email;role=r.role;$("#apw").value="";updateAuth();
-    go(cur?"#"+cur.id+"/nat":"");
-  }catch(x){m.textContent=err(x)}
-});
-let actTok="";
-async function showActivation(tok){
-  actTok=tok;$("#actmsg").textContent="";$("#actpw").value=$("#actpw2").value="";
-  try{const r=await api("GET","/auth/activation?token="+encodeURIComponent(tok));$("#act-email").textContent=r.email;$("#actbtn").disabled=false}
-  catch(x){$("#act-email").textContent="–";$("#actbtn").disabled=true;$("#actmsg").textContent="Ce lien d’activation n’est plus valide. Demande-en un nouveau à l’administrateur."}
-}
-$("#actform").addEventListener("submit",async e=>{
-  e.preventDefault();const m=$("#actmsg");m.textContent="";
-  if($("#actpw").value!==$("#actpw2").value){m.textContent="Les deux mots de passe ne correspondent pas.";return}
-  try{const r=await api("POST","/auth/activate",{token:actTok,password:$("#actpw").value});me=r.email;role=r.role;updateAuth();history.replaceState(null,"","#");show()}
-  catch(x){m.textContent=err(x)}
-});
-$("#pwform").addEventListener("submit",async e=>{
-  e.preventDefault();const m=$("#pwmsg");m.style.color="";m.textContent="";
-  if($("#pwnew").value!==$("#pwnew2").value){m.textContent="Les deux mots de passe ne correspondent pas.";return}
-  try{await api("POST","/auth/password",{current:$("#pwcur").value,password:$("#pwnew").value});$("#pwform").reset();m.style.color="var(--ok)";m.textContent="Mot de passe modifié."}
-  catch(x){m.textContent=err(x)}
-});
-const activationLink=tok=>location.origin+"/#activer/"+tok;
-function showLink(email,tok){
-  const link=activationLink(tok);
-  $("#ulink").hidden=false;$("#ulink-e").textContent=email;$("#ulink-i").value=link;
-  $("#umail").href="mailto:"+encodeURIComponent(email)+"?subject="+encodeURIComponent("Ton accès aux horaires de passage")+"&body="+encodeURIComponent("Bonjour,\n\nTon accès à l’application des horaires de passage est prêt. Clique sur ce lien pour choisir ton mot de passe (valable 7 jours) :\n\n"+link+"\n\nÀ bientôt.");
-}
-$("#ucopy").onclick=async()=>{const i=$("#ulink-i");try{await navigator.clipboard.writeText(i.value);$("#ucopy").textContent="Lien copié"}catch(x){i.select();$("#ucopy").textContent="Sélectionné : copie-le (Ctrl+C)"}setTimeout(()=>$("#ucopy").textContent="Copier le lien",2500)};
-async function renderUsers(){
-  let list=[];
-  try{list=await api("GET","/users")}catch(x){$("#ubody").innerHTML=`<tr><td colspan="4">${esc(err(x))}</td></tr>`;return}
-  $("#ubody").innerHTML=list.map(u=>{const self=u.email===me;return`<tr data-e="${esc(u.email)}"><td>${esc(u.email)}${self?" (toi)":""}</td><td><select data-role aria-label="Rôle de ${esc(u.email)}"${u.locked||self?" disabled":""}><option value="editor"${u.role==="editor"?" selected":""}>Éditeur</option><option value="admin"${u.role==="admin"?" selected":""}>Administrateur</option></select></td><td>${u.active?"Actif":u.pending?"En attente d’activation":"Lien expiré"}</td><td class="n"><button class="ghost" data-reset>Nouveau lien</button>${u.locked||self?"":`<button class="ghost" data-del>Supprimer</button>`}</td></tr>`}).join("")||`<tr><td colspan="4">Aucun accès.</td></tr>`;
-}
-$("#uform").addEventListener("submit",async e=>{
-  e.preventDefault();const m=$("#umsg");m.textContent="";$("#ulink").hidden=true;
-  try{const r=await api("POST","/users",{op:"create",email:$("#uemail").value.trim(),role:$("#urole").value});$("#uform").reset();showLink(r.email,r.token);renderUsers()}
-  catch(x){m.textContent=err(x)}
-});
-$("#ubody").addEventListener("click",async e=>{
-  const tr=e.target.closest("tr"),em=tr&&tr.dataset.e,m=$("#umsg");if(!em)return;m.textContent="";
-  try{
-    if(e.target.matches("[data-reset]")){const r=await api("POST","/users",{op:"reset",email:em});showLink(r.email,r.token);renderUsers()}
-    else if(e.target.matches("[data-del]")&&confirm("Supprimer l’accès de "+em+" ?")){await api("POST","/users",{op:"delete",email:em});renderUsers()}
-  }catch(x){m.textContent=err(x)}
-});
-$("#ubody").addEventListener("change",async e=>{
-  if(!e.target.matches("[data-role]"))return;const em=e.target.closest("tr").dataset.e;
-  try{await api("POST","/users",{op:"role",email:em,role:e.target.value})}catch(x){$("#umsg").textContent=err(x);renderUsers()}
+    const r=await api("POST","/auth/"+authMode,{email:$("#aemail").value.trim(),password:$("#apw").value,code:$("#acode").value});
+    me=r.email;$("#apw").value="";$("#acode").value="";updateAuth();
+    location.hash=cur?"#"+cur.id+"/nat":"";if(!location.hash)show();
+  }catch(err){m.textContent=err.message&&isNaN(err.message)?err.message:"Connexion impossible. Réessaie."}
 });
 
 /* ---------- Navigation : #<id>/<onglet> ou #nouveau ---------- */
@@ -558,11 +474,8 @@ function fillSelect(){$("#rsel").innerHTML=routes.map(r=>`<option value="${r.id}
 async function show(){
   if(dirty)await flush();
   let [id,t]=location.hash.slice(1).split("/");
-  try{await loadList()}catch(e){status("err",e.status===503?e.message:"Impossible de joindre le serveur.");return}
-  if(id==="connexion"){fillSelect();$("#acfg").hidden=authCfg;return view("connexion")}
-  if(id==="activer"){fillSelect();await showActivation(t||"");return view("activer")}
-  if(id==="compte"&&me){fillSelect();$("#acc-info").textContent="Connecté avec "+me+(role==="admin"?" (administrateur).":".");$("#pwmsg").textContent="";return view("compte")}
-  if(id==="utilisateurs"&&role==="admin"){fillSelect();await renderUsers();return view("utilisateurs")}
+  try{await loadList()}catch(e){status("err","Impossible de joindre le serveur.");return}
+  if(id==="connexion"){fillSelect();renderAuthForm();return view("connexion")}
   if(!routes.length){cur=null;fillSelect();return view(me?"nouveau":"vide")}
   if(id==="nouveau"&&me){cur=null;fillSelect();return view("nouveau")}
   if(!routes.some(r=>r.id===id))id=routes[0].id;
@@ -576,7 +489,7 @@ async function show(){
   view(tab);
 }
 function view(name){
-  const has=!!cur&&!["nouveau","connexion","vide","activer","compte","utilisateurs"].includes(name),ids=cur?cur.id:"",sub=name.endsWith("-r");updateAuth();
+  const has=!!cur&&!["nouveau","connexion","vide"].includes(name),ids=cur?cur.id:"",sub=name.endsWith("-r");updateAuth();
   $$("main section").forEach(s=>s.hidden=s.id!==name);
   $("#tabs").hidden=!has;$("#rname").hidden=!has||!me;$("#delbtn").hidden=!has||!me;$("#rsel").hidden=!routes.length;$("label[for=rsel]").hidden=!routes.length;
   $("#hname").textContent=cur?cur.name||"Horaires de passage":"Horaires de passage";
@@ -588,7 +501,7 @@ function view(name){
   if(SK.includes(name))renderParam(name);else if(name==="global")renderGlobal();else renderRes(name.replace(/-r$/,""));
 }
 addEventListener("hashchange",show);
-(async()=>{try{const r=await api("GET","/auth/me");me=r.email;role=r.role;authCfg=r.configured}catch(e){}updateAuth();show()})();
+(async()=>{try{const r=await api("GET","/auth/me");me=r.email;authCfg=r.configured}catch(e){}updateAuth();show()})();
 </script>
 </body>
 </html>

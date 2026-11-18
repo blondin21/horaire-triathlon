@@ -1,85 +1,79 @@
-# Horaires de passage : natation, vélo, course à pied (Vercel + Neon)
+# Horaires de passage : vélo, natation, course à pied (Netlify)
 
 Application web pour calculer les horaires de passage de groupes sur un ou plusieurs parcours.
-Chaque parcours regroupe trois disciplines. Les données sont enregistrées dans **Neon** (Postgres serverless),
-proposé par le Marketplace de Vercel (offre gratuite disponible).
-
-## Contenu
-- `public/index.html` : l'application (page unique)
-- `api/routes/…`, `api/auth/[action].mjs`, `api/users/index.mjs` : points d'entrée de l'API (fonctions Vercel)
-- `lib/` : logique de l'API (`db.mjs` contient toutes les requêtes SQL), sessions et connexion
-- `schema.sql` : structure des tables, à titre de référence (elles se créent toutes seules au premier appel)
-- `vercel.json`, `package.json` : configuration
-
-## Publier
-1. Mets le dossier sur GitHub, puis sur [vercel.com](https://vercel.com) : *Add New… > Project*, choisis le dépôt.
-   Laisse « Other » comme framework : `vercel.json` indique déjà le dossier à publier (`public`), sans commande de build.
-2. Dans l'onglet **Storage** du projet, *Create Database*, choisis **Neon (Postgres)** dans le Marketplace, puis connecte-le au projet
-   (tous les environnements). Vercel ajoute alors la variable `DATABASE_URL`.
-3. Dans *Settings > Environment variables*, ajoute les variables de la section suivante.
-4. Redéploie (*Deployments > … > Redeploy*) pour que les variables soient prises en compte.
-
-Avec la ligne de commande : `npm install -g vercel`, puis `vercel` (aperçu) ou `vercel --prod`.
-Pour tester en local : `vercel link`, `vercel env pull .env.local`, puis `vercel dev`.
-
-## Accès : administrateur, éditeurs et invités
-- **Invité (sans connexion)** : voit uniquement les onglets de restitution (natation, vélo, course, globale) et peut exporter
-  les tableaux. Aucun paramètre n'est visible ni modifiable, et les GPX ne se téléchargent pas.
-- **Éditeur** : accès à tout : paramétrage, création et suppression de parcours, GPX.
-- **Administrateur** : tout ce que fait un éditeur, plus la gestion des accès (bouton « Utilisateurs »).
-
-Variables d'environnement :
-| Variable | Rôle |
-|---|---|
-| `DATABASE_URL` | Ajoutée par l'intégration Neon. Adresse de la base |
-| `SESSION_SECRET` | **Obligatoire.** Longue chaîne aléatoire (16 caractères minimum) qui signe les sessions. Exemple : `openssl rand -base64 32` |
-| `ADMIN_EMAIL` | **Obligatoire.** Email du compte administrateur principal |
-| `ADMIN_PASSWORD` | **Obligatoire au départ.** Mot de passe initial de l'administrateur |
-
-**Première connexion** : ouvre le site, clique sur « Se connecter » et saisis `ADMIN_EMAIL` et `ADMIN_PASSWORD`. Le compte
-administrateur est alors créé dans la base. `ADMIN_PASSWORD` ne sert qu'à cette création : change ensuite ton mot de passe dans
-« Mon compte », puis tu peux supprimer cette variable de Vercel.
-
-**Créer un utilisateur avec son email** : bouton « Utilisateurs », saisis l'email et choisis le rôle, puis « Créer l'accès ».
-L'application génère un **lien d'activation** (valable 7 jours, à usage unique). Copie-le, ou clique sur « Envoyer par email »
-pour ouvrir ton application de messagerie avec le message déjà rédigé. La personne ouvre le lien, choisit son mot de passe et
-est connectée. Aucun email n'est envoyé automatiquement par le site.
-
-Dans la liste des accès : « Nouveau lien » (mot de passe oublié : la personne choisit un nouveau mot de passe), changement de rôle
-et suppression (l'accès est révoqué immédiatement, même si la personne est connectée). Chacun peut changer son mot de passe
-dans « Mon compte ». Après 5 échecs de connexion, le compte est bloqué 15 minutes.
-
-Si tu perds l'accès administrateur : supprime la ligne de ton compte dans la table `hdp_users` (éditeur SQL de Neon) et reconnecte-toi
-avec `ADMIN_EMAIL` et `ADMIN_PASSWORD`. Changer `SESSION_SECRET` déconnecte tout le monde.
+Chaque parcours regroupe trois disciplines et est enregistré dans **Netlify Blobs**, la base clé/valeur intégrée
+à Netlify : aucune base à créer ni à configurer.
 
 ## Onglets de chaque parcours
 Quatre onglets : **Natation**, **Vélo**, **Course à pied** et **Restitution globale**. Dans chaque discipline, le bouton
-« Paramétrage / Restitution » bascule entre les deux vues (réservé aux personnes connectées).
+« Paramétrage / Restitution » bascule entre les deux vues.
 - **Paramétrage** : groupes (nom, heure de départ, vitesse en km/h pour le vélo, allure en min:s par 100 m pour la natation
-  et par km pour la course), transitions T1 (natation → vélo) et T2 (vélo → course), points de passage, distance et GPX.
+  et par km pour la course), points de passage, distance et fichier GPX. Les transitions se règlent par groupe :
+  **T1** (natation → vélo) dans l'onglet Vélo, **T2** (vélo → course) dans l'onglet Course à pied, en minutes.
 - **Restitution** : tableau des horaires par point, curseur d'heure, plan avec fond de carte (si la discipline a un tracé GPX).
-- **Restitution globale** : chronologie et détail, par discipline ou par groupe, et total combiné par groupe (avec T1 et T2).
-- **Exports** : chaque tableau de résultats a un bouton Tableur (.xlsx) et Image (.png).
+- **Restitution globale** : chronologie des groupes et tableau de détail, au choix **par discipline** ou **par groupe**
+  (dans ce cas, chaque groupe affiche nage, T1, vélo, T2, course et son total), puis un tableau du **total combiné par groupe**
+  (natation + T1 + vélo + T2 + course). Les groupes sont rapprochés d'une discipline à l'autre par leur rang dans la liste.
+- **Exports** : chaque tableau de résultats (et la chronologie) a un bouton **Tableur (.xlsx)** et **Image (.png)**.
 
-Natation en mètres. Le GPX est facultatif pour la natation et la course.
+Les distances de la natation se saisissent en mètres. Pour la natation et la course, le GPX est facultatif :
+sans tracé, la distance se règle à la main et le plan n'est pas affiché.
+Les horaires de départ de chaque discipline sont indépendants (pas d'enchaînement automatique avec les transitions).
 Couleurs : bleu pour la natation, vert pour le vélo, rouge pour la course à pied.
 
-## Limites à connaître
-- **Taille des GPX** : 3,5 Mo maximum par fichier (limite de requête de Vercel). Un fichier plus lourd est refusé avec un message.
-- **Hébergement Vercel** : l'offre gratuite « Hobby » est prévue pour un usage personnel non commercial.
-  Vérifie les conditions de Vercel si l'événement est organisé par une structure commerciale.
-- **Données des autres versions** : les données de la version Netlify ou Vercel + Upstash ne sont pas reprises.
-  Recrée les parcours (import des GPX, points et groupes).
+## Contenu
+- `public/index.html` : l'application
+- `netlify/functions/routes.mjs` : API `/api/routes` (liste, création, lecture, modification, suppression, GPX)
+- `netlify/functions/auth.mjs` et `netlify/lib/session.mjs` : connexion par email et mot de passe (sessions par cookie signé)
+- `netlify.toml`, `package.json` : configuration
 
-## Fond de carte et scripts externes
-Le plan utilise Leaflet (unpkg.com) avec OpenStreetMap (par défaut), Plan IGN, Photo aérienne IGN ou Tracé seul ; le choix est
-mémorisé sur l'appareil. Aucune clé n'est nécessaire. Respecte les conditions d'utilisation des tuiles OpenStreetMap et vérifie
-celles de l'IGN avant une diffusion large. L'export .xlsx utilise SheetJS (cdnjs.cloudflare.com) ; sans lui, l'export bascule sur un CSV.
+## Publier
+1. Mets le dossier sur GitHub, puis dans Netlify : *Add new site > Import an existing project*.
+   Aucun réglage à changer : `netlify.toml` indique le dossier `public` et les fonctions.
+   (Ou avec la CLI : `npm install`, puis `npx netlify deploy --prod`.)
+2. Ouvre le site, clique sur « Nouveau parcours » et importe un GPX (ou charge l'exemple).
 
-## En cas de problème
-- **« Base de données non configurée »** : Neon n'est pas connecté au projet, ou le projet n'a pas été redéployé après la connexion.
-- **« La connexion n'est pas configurée »** : `SESSION_SECRET` manque (ou fait moins de 16 caractères), ou `DATABASE_URL` est absente.
-- **Impossible de se connecter en administrateur** : vérifie `ADMIN_EMAIL` et `ADMIN_PASSWORD`, saisis exactement les mêmes valeurs,
-  et redéploie après toute modification des variables.
-- **Erreur 404 sur /api** : vérifie que les dossiers `api/` et `lib/` sont bien dans le dépôt, à la racine.
-- Les noms exacts des menus Vercel et Neon peuvent évoluer ; cherche l'équivalent dans la même rubrique.
+## Connexion et mode invité
+- **Invité (sans connexion)** : voit uniquement les onglets de restitution (natation, vélo, course, globale) et peut exporter
+  les tableaux. Aucun paramètre n'est visible ni modifiable, et les GPX ne se téléchargent pas.
+- **Connecté (email + mot de passe)** : accès à tout : paramétrage, création et suppression de parcours, GPX.
+  La session dure 30 jours.
+
+Variables d'environnement à définir dans Netlify (*Site configuration > Environment variables*), puis redéployer :
+| Variable | Rôle |
+|---|---|
+| `SESSION_SECRET` | **Obligatoire.** Longue chaîne aléatoire (16 caractères minimum) qui signe les sessions. Exemple : `openssl rand -base64 32` |
+| `INVITE_CODE` | **Obligatoire.** Code d'invitation à communiquer aux personnes autorisées à créer un compte |
+| `EDITOR_EMAILS` | Facultatif. Liste d'emails autorisés, séparés par des virgules. Si elle est définie, seuls ces emails peuvent créer un compte |
+
+Premier compte : ouvre le site, clique sur « Se connecter », choisis « Créer un compte », saisis ton email, un mot de passe
+(8 caractères minimum) et le code d'invitation. Les comptes suivants se créent de la même façon.
+
+Mot de passe oublié : aucun email n'est envoyé par l'application. Recrée le compte avec le même email et le code d'invitation,
+ce qui remplace le mot de passe. Garde donc le code d'invitation secret : toute personne qui le connaît peut créer ou réinitialiser un compte
+(utilise `EDITOR_EMAILS` pour limiter les emails acceptés). Après 5 échecs de connexion, le compte est bloqué 15 minutes.
+Pour retirer un accès, supprime la ligne correspondante du magasin `auth` dans Netlify (*Blobs*) ou change `SESSION_SECRET`
+(ce qui déconnecte tout le monde).
+
+L'ancienne variable `EDIT_CODE` n'est plus utilisée.
+
+## Tester en local
+`npm install`, puis `npx netlify dev` (Blobs fonctionne en local avec la CLI). Ouvre http://localhost:8888.
+Pour tester la connexion en local, définis `SESSION_SECRET` et `INVITE_CODE` dans un fichier `.env` à la racine du projet.
+
+## Fond de carte
+Le plan utilise Leaflet (chargé depuis unpkg.com). Le sélecteur en haut à droite de la carte propose OpenStreetMap (par défaut),
+Plan IGN, Photo aérienne IGN et Tracé seul ; le choix est mémorisé sur l'appareil. Aucune clé API n'est nécessaire.
+Respecte les conditions d'utilisation des tuiles OpenStreetMap (usage modéré, mention de la source déjà affichée)
+et vérifie celles de l'IGN (Géoplateforme) avant une diffusion large. Sur la carte, un clic sur un point superposé
+(tour 1 / tour 2) passe au suivant.
+
+## Données
+Un blob JSON par parcours (`route:<id>`) dans le magasin `parcours` (les comptes sont dans le magasin `auth`), avec les trois disciplines, et un blob par GPX d'origine
+(`gpx:<id>:<discipline>`, 4 Mo maximum). Les modifications s'enregistrent automatiquement après 0,7 s.
+Les anciens parcours (vélo seul) sont convertis automatiquement : leurs données deviennent la discipline vélo,
+la natation et la course reçoivent des valeurs par défaut. Les km des points sont saisis à la main (ils ne sont pas déduits du GPX).
+
+## Scripts externes
+La page charge Leaflet (unpkg.com) pour la carte et SheetJS (cdnjs.cloudflare.com) pour l'export .xlsx. Si SheetJS ne se charge pas,
+l'export tableur bascule sur un fichier CSV.
